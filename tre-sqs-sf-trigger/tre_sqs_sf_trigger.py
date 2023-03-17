@@ -120,7 +120,7 @@ def execute_step_function(
     logger.info('event_record: %s', event_record)
     event_record_body = json.loads(event_record['body'])
     logger.info('event_record_body: %s', event_record_body)
-    tre_message = json.loads(event_record_body['Message'])
+    tre_message = event_record_body
     logger.info('tre_message: %s', tre_message)
 
     # Get consignment reference for the execution name
