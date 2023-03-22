@@ -20,6 +20,7 @@ import logging
 import json
 import boto3
 import os
+import uuid
 
 # Set global logging options; AWS environment may override this though
 logging.basicConfig(
@@ -137,12 +138,17 @@ def execute_step_function(
         arn = event_record[EVENT_SOURCE_ARN]
         event_source = arn.split(':')[5]
 
-    # Get latest message UUID for the execution name
-    latest_uuid = get_latest_uuid(tre_event=tre_message)
-    logger.info('latest_uuid=%s', latest_uuid)
+    # update uuids in tr5e message
+    input_execution_id = tre_message['properties']['executionId']
+    fresh_execution_id = str(uuid.uuid4())
+    logger.info('input_execution_id=%s', input_execution_id)
+    logger.info('fresh_execution_id=%s', fresh_execution_id)
+    tre_message['properties']['executionId'] = fresh_execution_id
+    tre_message['properties']['parentExecutionId'] = input_execution_id
+
 
     # Build execution name
-    name_list = [consignment_ref, event_source, latest_uuid]
+    name_list = [consignment_ref, event_source, fresh_execution_id]
     logger.info('name_list=%s', name_list)
     execution_name = NAME_SEPARATOR.join(name_list)
     logger.info('execution_name=%s', execution_name)
