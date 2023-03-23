@@ -65,30 +65,6 @@ def get_dict_key_value(source: dict, key_path: list):
             else:  # still keys to find, but no records to search
                 return None
 
-
-def get_latest_uuid(tre_event: dict) -> str:
-    """
-    Returns the TRE event's latest UUID.
-    """
-    if KEY_UUIDS in tre_event:
-        uuid_list = tre_event[KEY_UUIDS]
-        if isinstance(uuid_list, list):
-            if len(uuid_list) > 0:
-                latest_uuid_dict = uuid_list[-1]
-                key_count = len(latest_uuid_dict.keys())
-                if key_count == 1:
-                    uuid_key = list(latest_uuid_dict.keys())[0]
-                    return latest_uuid_dict[uuid_key]
-                else:
-                    raise ValueError(f'UUID key count is {key_count}, not 1')
-            else:
-                raise ValueError(f'Key "{KEY_UUIDS}" is an empty list')
-        else:
-            raise ValueError(f'Key "{KEY_UUIDS}" is not a list')
-    else:
-        raise ValueError(f'Missing key "{KEY_UUIDS}"')
-
-
 class TREStepFunctionExecutionError(Exception):
     """
     For step function execution errors.
@@ -167,7 +143,7 @@ def execute_step_function(
     http_code = int(execution_response['ResponseMetadata']['HTTPStatusCode'])
     if http_code not in HTTP_OK_STATUS_CODES:
         error_message = (
-            f'Event UUID {latest_uuid} Step Function start_execution response '
+            f'Event UUID {fresh_execution_id} Step Function start_execution response '
             f'is {execution_response}'
         )
 
@@ -176,7 +152,7 @@ def execute_step_function(
     
     # Execution was OK, return event's UUID and step function execution response
     return {
-        'uuid': latest_uuid,
+        'uuid': fresh_execution_id,
         'response': execution_response
     }
 
