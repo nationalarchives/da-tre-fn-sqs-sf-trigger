@@ -20,6 +20,7 @@ import logging
 import json
 import boto3
 import os
+import uuid
 
 # Set global logging options; AWS environment may override this though
 logging.basicConfig(
@@ -63,30 +64,6 @@ def get_dict_key_value(source: dict, key_path: list):
                                           key_path=key_path)
             else:  # still keys to find, but no records to search
                 return None
-
-
-def get_latest_uuid(tre_event: dict) -> str:
-    """
-    Returns the TRE event's latest UUID.
-    """
-    if KEY_UUIDS in tre_event:
-        uuid_list = tre_event[KEY_UUIDS]
-        if isinstance(uuid_list, list):
-            if len(uuid_list) > 0:
-                latest_uuid_dict = uuid_list[-1]
-                key_count = len(latest_uuid_dict.keys())
-                if key_count == 1:
-                    uuid_key = list(latest_uuid_dict.keys())[0]
-                    return latest_uuid_dict[uuid_key]
-                else:
-                    raise ValueError(f'UUID key count is {key_count}, not 1')
-            else:
-                raise ValueError(f'Key "{KEY_UUIDS}" is an empty list')
-        else:
-            raise ValueError(f'Key "{KEY_UUIDS}" is not a list')
-    else:
-        raise ValueError(f'Missing key "{KEY_UUIDS}"')
-
 
 class TREStepFunctionExecutionError(Exception):
     """
@@ -137,12 +114,17 @@ def execute_step_function(
         arn = event_record[EVENT_SOURCE_ARN]
         event_source = arn.split(':')[5]
 
-    # Get latest message UUID for the execution name
-    latest_uuid = get_latest_uuid(tre_event=tre_message)
-    logger.info('latest_uuid=%s', latest_uuid)
+    # update uuids in tr5e message
+    input_execution_id = tre_message['properties']['executionId']
+    fresh_execution_id = str(uuid.uuid4())
+    logger.info('input_execution_id=%s', input_execution_id)
+    logger.info('fresh_execution_id=%s', fresh_execution_id)
+    tre_message['properties']['executionId'] = fresh_execution_id
+    tre_message['properties']['parentExecutionId'] = input_execution_id
+
 
     # Build execution name
-    name_list = [consignment_ref, event_source, latest_uuid]
+    name_list = [consignment_ref, event_source, fresh_execution_id]
     logger.info('name_list=%s', name_list)
     execution_name = NAME_SEPARATOR.join(name_list)
     logger.info('execution_name=%s', execution_name)
@@ -161,7 +143,7 @@ def execute_step_function(
     http_code = int(execution_response['ResponseMetadata']['HTTPStatusCode'])
     if http_code not in HTTP_OK_STATUS_CODES:
         error_message = (
-            f'Event UUID {latest_uuid} Step Function start_execution response '
+            f'Event UUID {fresh_execution_id} Step Function start_execution response '
             f'is {execution_response}'
         )
 
@@ -170,7 +152,7 @@ def execute_step_function(
     
     # Execution was OK, return event's UUID and step function execution response
     return {
-        'uuid': latest_uuid,
+        'uuid': fresh_execution_id,
         'response': execution_response
     }
 
