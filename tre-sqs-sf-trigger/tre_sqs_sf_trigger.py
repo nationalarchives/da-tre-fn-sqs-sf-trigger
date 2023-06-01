@@ -40,12 +40,13 @@ KEY_RECORDS = 'Records'
 KEY_UUIDS = 'UUIDs'
 TRE_STATE_MACHINE_ARN = os.environ['TRE_STATE_MACHINE_ARN']
 TRE_CONSIGNMENT_KEY_PATH = os.environ['TRE_CONSIGNMENT_KEY_PATH']
+TRE_ERROR_SNS_ARN = os.environ['TRE_ERROR_SNS_ARN']
 HTTP_OK_STATUS_CODES = [200]
 KEY_EVENT_RECORD = 'event_record'
 KEY_ERROR = 'error'
 
 client = boto3.client('stepfunctions')
-
+sns_client = boto3.client('sns')
 
 def get_dict_key_value(source: dict, key_path: list):
     """
@@ -196,6 +197,27 @@ def handler(event, context):
             for record in execution_fail_list
             if KEY_ERROR in record
         ]
+
+        # write error to tre-internal sns:
+        event_output_error = {
+            "properties": {
+                "messageType": "uk.gov.nationalarchives.tre.messages.Error",
+                # "timestamp": timestamp,
+                # "function": PROCESS,
+                # "producer": PRODUCER,
+                # "executionId": execution_id,
+                # "parentExecutionId": parent_execution_id,
+            },
+            "parameters": {
+                # "reference": reference,
+                # "originator": originator,
+                "errors": str(error_list),
+            },
+        }
+        sns_client.publish(
+            TopicArn=TRE_ERROR_SNS_ARN,
+            Message=event_output_error
+        )
         
         raise TREStepFunctionExecutionError(
             f'Failed to process {len(execution_fail_list)}/'
