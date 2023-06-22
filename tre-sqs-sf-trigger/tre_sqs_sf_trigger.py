@@ -123,8 +123,8 @@ def execute_step_function(
     tre_message['properties']['parentExecutionId'] = input_execution_id
 
 
-    # Build execution name
-    name_list = [consignment_ref, event_source, fresh_execution_id]
+    # Build execution name using only first 8 chars of the uuid
+    name_list = [consignment_ref, event_source, fresh_execution_id[0:8]]
     logger.info('name_list=%s', name_list)
     execution_name = NAME_SEPARATOR.join(name_list)
     logger.info('execution_name=%s', execution_name)
