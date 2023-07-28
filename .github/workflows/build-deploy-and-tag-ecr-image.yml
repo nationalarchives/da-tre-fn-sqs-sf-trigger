@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 jobs:
   ecr-build:
-    uses: nationalarchives/tre-github-actions/.github/workflows/docker-build-and-ecr-deploy.yml@0.0.3
+    uses: nationalarchives/tre-github-actions/.github/workflows/docker-build-and-ecr-deploy-using-code-artifact.yml@0.0.9
     with:
       docker_image_name: 'tre-sqs-sf-trigger'
       build_dir: 'tre-sqs-sf-trigger'
