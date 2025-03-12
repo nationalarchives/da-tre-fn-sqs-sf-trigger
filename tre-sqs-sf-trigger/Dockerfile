@@ -6,7 +6,6 @@ COPY tre_sqs_sf_trigger.py ${LAMBDA_TASK_ROOT}
 
 # Install the function's dependencies using file requirements.txt
 COPY requirements.txt ./requirements.txt
-RUN dnf upgrade
 RUN dnf clean all --enablerepo=\*
 RUN pip3 install --requirement requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
