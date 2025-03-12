@@ -1,1 +1,2 @@
-# Used by common GitHub Action build workflow
+boto3~=1.21.6
+
