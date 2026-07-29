@@ -1,2 +1,2 @@
-boto3~=1.43.1
-legacy-cgi~=2.6.4
+boto3==1.43.1
+legacy-cgi==2.6.4
